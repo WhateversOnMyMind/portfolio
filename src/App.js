@@ -25,6 +25,8 @@ export default function App() {
 
     const accent = THEMES[displayTheme].accent;
     const accentDark = THEMES[displayTheme].dark;
+    const isDark = !!THEMES[displayTheme].darkMode;
+    const pageAccent = THEMES[displayTheme].hl || accent;
 
     const switchTheme = (t) => {
         if (t === theme) return;
@@ -70,11 +72,26 @@ export default function App() {
     };
 
     return (
-        <div className="min-h-screen" style={{ background: "#f5f5f0", fontFamily: "Arial, Helvetica, sans-serif", color: "#111", opacity: themeTransitioning ? 0 : 1, transition: "opacity 0.18s ease" }}>
+        <div className="min-h-screen" style={{ background: "var(--bg)", fontFamily: "Arial, Helvetica, sans-serif", color: "var(--text)", opacity: themeTransitioning ? 0 : 1, transition: "opacity 0.18s ease" }}>
             <style>{`
                 ${GOOGLE_FONT}
                 .special-elite { font-family: 'Special Elite', 'Courier New', monospace; }
                 * { box-sizing: border-box; }
+                :root {
+                    --bg:           ${isDark ? "#111111" : "#f5f5f0"};
+                    --surface:      ${isDark ? "#1c1c1c" : "#ffffff"};
+                    --text:         ${isDark ? "#e0e0e0" : "#111111"};
+                    --border:       ${isDark ? "#3a3a3a" : "#222222"};
+                    --sub:          ${isDark ? "#999999" : "#555555"};
+                    --muted:        ${isDark ? "#666666" : "#999999"};
+                    --divider:      ${isDark ? "#2e2e2e" : "#dddddd"};
+                    --img-bg:       ${isDark ? "#252525" : "#e0e0e0"};
+                    --input-bg:     ${isDark ? "#161616" : "#f5f5f0"};
+                    --hover:        ${isDark ? "#252525" : "#f0eded"};
+                    --toolbar-bg:   ${isDark ? "#1e1e1e" : "#edf2fa"};
+                    --toolbar-bdr:  ${isDark ? "#333333" : "#c7c7c7"};
+                    --editor-wrap:  ${isDark ? "#161616" : "#f8f9fa"};
+                }
                 @keyframes slideInLeft  { from { transform: translateX(100%);  } to { transform: translateX(0); } }
                 @keyframes slideInRight { from { transform: translateX(-100%); } to { transform: translateX(0); } }
             `}</style>
@@ -83,28 +100,28 @@ export default function App() {
                  theme={theme} switchTheme={switchTheme} navigate={(to) => { setAdminOpen(false); navigate(to); }} goAdmin={goAdmin} />
 
             {adminOpen && !adminUnlocked && (
-                <AdminPasswordModal accent={accent} adminModalPw={adminModalPw} setAdminModalPw={setAdminModalPw}
+                <AdminPasswordModal accent={pageAccent} adminModalPw={adminModalPw} setAdminModalPw={setAdminModalPw}
                                     adminErr={adminErr} onSubmit={submitAdminPw} onCancel={() => setAdminOpen(false)} />
             )}
 
             <div className="max-w-[1100px] mx-auto px-3 md:px-5 py-5 md:py-8 relative">
                 {adminOpen && adminUnlocked ? (
-                    <AdminPanel accent={accent} projects={projects} setProjects={setProjects}
+                    <AdminPanel accent={pageAccent} projects={projects} setProjects={setProjects}
                                 editingProject={editingProject} setEditingProject={setEditingProject} fetchProjects={fetchProjects} />
                 ) : loading ? (
                     <div className="flex items-center justify-center h-64">
-                        <span className="special-elite text-sm" style={{ color: "#555" }}>Loading...</span>
+                        <span className="special-elite text-sm" style={{ color: "var(--sub)" }}>Loading...</span>
                     </div>
                 ) : (
                     <div className="relative overflow-hidden">
                         {animating && prevPage && (
                             <div className="absolute inset-0" style={{ transform: slideDir === "left" ? "translateX(-100%)" : "translateX(100%)", transition: "transform 0.35s ease" }}>
-                                <PageContent page={prevPage} accent={accent} accentDark={accentDark} published={published}
+                                <PageContent page={prevPage} accent={pageAccent} accentDark={accentDark} published={published}
                                              navigate={navigate} openProject={openProject} viewingProject={null} setViewingProject={setViewingProject} />
                             </div>
                         )}
                         <div style={{ animation: animating ? `slideIn${slideDir === "left" ? "Left" : "Right"} 0.35s ease forwards` : "none" }}>
-                            <PageContent page={page} accent={accent} accentDark={accentDark} published={published}
+                            <PageContent page={page} accent={pageAccent} accentDark={accentDark} published={published}
                                          navigate={navigate} openProject={openProject} viewingProject={viewingProject} setViewingProject={setViewingProject} />
                         </div>
                     </div>

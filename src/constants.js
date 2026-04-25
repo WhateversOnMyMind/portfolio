@@ -1,7 +1,7 @@
 export const THEMES = {
     crimson: { accent: "#A51C30", dark: "#7a1423", name: "Harvard Crimson" },
     yale:    { accent: "#00356B", dark: "#002454", name: "Yale Blue" },
-    black:   { accent: "#111111", dark: "#000000", name: "Black" },
+    black:   { accent: "#1a1a1a", dark: "#0a0a0a", name: "Dark Mode", hl: "#aaaaaa", darkMode: true },
 };
 
 export const ADMIN_PW = process.env.REACT_APP_ADMIN_PW;

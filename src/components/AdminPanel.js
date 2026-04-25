@@ -174,7 +174,7 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
         <button onClick={action}
                 className="px-1 py-0.5 md:px-2 md:py-1 text-xs cursor-pointer rounded-sm"
                 style={{ fontFamily: "monospace", background: isActive ? accent : "transparent", color: isActive ? "#fff" : "#333", border: "1px solid transparent", flexShrink: 0, whiteSpace: "nowrap" }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#e0e0e0"; }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--hover)"; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
             {label}
         </button>
@@ -200,12 +200,12 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
             {/* Metadata row */}
             <div className="flex flex-col gap-3 mb-3">
                 <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Document Title"
-                       className="w-full p-3 text-lg font-bold" style={{ border: "1px solid #ccc" }} />
+                       className="w-full p-3 text-lg font-bold" style={{ border: "1px solid var(--divider)", background: "var(--surface)", color: "var(--text)" }} />
                 <div className="flex gap-3">
                     <input value={date} onChange={e => setDate(e.target.value)}
-                           className="flex-1 p-3 text-sm special-elite" style={{ border: "1px solid #ccc" }} />
+                           className="flex-1 p-3 text-sm special-elite" style={{ border: "1px solid var(--divider)", background: "var(--surface)", color: "var(--text)" }} />
                     <select value={status} onChange={e => setStatus(e.target.value)}
-                            className="p-3 text-sm special-elite" style={{ border: "1px solid #ccc", width: "130px" }}>
+                            className="p-3 text-sm special-elite" style={{ border: "1px solid var(--divider)", background: "var(--surface)", color: "var(--text)", width: "130px" }}>
                         <option value="draft">Draft</option>
                         <option value="published">Published</option>
                     </select>
@@ -226,15 +226,15 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                 <input value={flairInput} onChange={e => setFlairInput(e.target.value)}
                        onKeyDown={e => e.key === "Enter" && addFlair()}
                        placeholder="Add flair..." className="p-1 text-xs special-elite"
-                       style={{ border: "1px solid #ccc", width: "110px", outline: "none" }} />
+                       style={{ border: "1px solid var(--divider)", background: "var(--input-bg)", color: "var(--text)", width: "110px", outline: "none" }} />
                 <button onClick={addFlair} className="special-elite text-xs px-2 py-1 cursor-pointer"
                         style={{ background: "#222", color: "#fff", border: "none" }}>+</button>
             </div>
 
             {/* Editor */}
-            <div style={{ background: "#f8f9fa", border: "1px solid #c7c7c7", borderRadius: "4px" }}>
+            <div style={{ background: "var(--editor-wrap)", border: "1px solid var(--toolbar-bdr)", borderRadius: "4px" }}>
                 <div className="md:sticky md:top-14 z-40 flex flex-nowrap md:flex-wrap gap-0.5 md:gap-1 p-1.5 md:p-2 items-center overflow-x-auto"
-                     style={{ background: "#edf2fa", borderBottom: "1px solid #c7c7c7", borderRadius: "4px 4px 0 0" }}>
+                     style={{ background: "var(--toolbar-bg)", borderBottom: "1px solid var(--toolbar-bdr)", borderRadius: "4px 4px 0 0" }}>
                     {editor && (
                         <>
                             <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid #ccc", flexShrink: 0 }}>
@@ -271,7 +271,7 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                         </>
                     )}
                 </div>
-                <div className="p-3 md:p-8 mx-auto my-2 md:my-4 bg-white shadow-sm" style={{ maxWidth: "850px", border: "1px solid #ddd", minHeight: "400px" }}>
+                <div className="p-3 md:p-8 mx-auto my-2 md:my-4 shadow-sm" style={{ maxWidth: "850px", border: "1px solid var(--divider)", minHeight: "400px", background: "var(--surface)" }}>
                     <EditorContent editor={editor} />
                 </div>
             </div>
@@ -283,20 +283,20 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                     {saving ? "Saving..." : "Commit Document"}
                 </button>
                 <button onClick={clearEditor} className="special-elite uppercase text-xs tracking-widest px-6 py-3 cursor-pointer"
-                        style={{ border: "2px solid #222" }}>
+                        style={{ border: "2px solid var(--border)", color: "var(--text)", background: "transparent" }}>
                     Start Fresh
                 </button>
                 {saveMsg && <span className="special-elite text-sm text-green-700 ml-2">{saveMsg}</span>}
             </div>
 
             {/* Document Registry */}
-            <div className="mt-16 pt-8" style={{ borderTop: "3px solid #222" }}>
+            <div className="mt-16 pt-8" style={{ borderTop: "3px solid var(--border)" }}>
                 <h3 className="special-elite text-sm uppercase mb-6 tracking-widest" style={{ color: accent }}>// Document Registry</h3>
                 <div className="grid gap-2">
                     {sorted.map(p => (
-                        <div key={p.id} className="flex justify-between items-center p-4 bg-white" style={{ border: "1px solid #222" }}>
+                        <div key={p.id} className="flex justify-between items-center p-4" style={{ border: "1px solid var(--border)", background: "var(--surface)" }}>
                             <div>
-                                <span className="font-bold text-lg mr-3">{p.title}</span>
+                                <span className="font-bold text-lg mr-3" style={{ color: "var(--text)" }}>{p.title}</span>
                                 {p.status === "draft" && <span className="text-xs px-2 py-1 bg-yellow-200 text-yellow-800 font-mono">DRAFT</span>}
                                 {parseFlairs(p.flairs).length > 0 && (
                                     <span className="ml-2 text-xs special-elite" style={{ color: accent }}>
@@ -318,15 +318,15 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
             </div>
 
             {/* Gallery Management */}
-            <div className="mt-16 pt-8" style={{ borderTop: "3px solid #222" }}>
+            <div className="mt-16 pt-8" style={{ borderTop: "3px solid var(--border)" }}>
                 <h3 className="special-elite text-sm uppercase mb-6 tracking-widest" style={{ color: accent }}>// Personal Gallery</h3>
 
                 <div className="flex gap-3 mb-6 items-center flex-wrap">
                     <input value={galleryCaption} onChange={e => setGalleryCaption(e.target.value)}
                            placeholder="Caption (optional)" className="p-2 text-sm special-elite"
-                           style={{ border: "1px solid #ccc", width: "220px" }} />
+                           style={{ border: "1px solid var(--divider)", background: "var(--input-bg)", color: "var(--text)", width: "220px" }} />
                     <label className="special-elite uppercase text-xs tracking-widest px-4 py-2 cursor-pointer text-white"
-                           style={{ background: uploadingGallery ? "#888" : accent, border: "2px solid #222" }}>
+                           style={{ background: uploadingGallery ? "var(--sub)" : accent, border: "2px solid var(--border)" }}>
                         {uploadingGallery ? "Uploading..." : "Upload Photos"}
                         <input type="file" accept="image/*" multiple className="hidden"
                                onChange={e => { if (e.target.files?.length) uploadGalleryImages(Array.from(e.target.files)); e.target.value = ""; }}
@@ -355,16 +355,17 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
             </div>
 
             <style>{`
-                .ProseMirror { outline: none; }
+                .ProseMirror { outline: none; color: var(--text); }
                 .ProseMirror p { margin-bottom: 1em; }
                 .ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1em; }
                 .ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1em; }
                 .ProseMirror li { margin-bottom: 0.25em; }
                 .ProseMirror img { max-width: 100%; height: auto; display: block; }
                 .ProseMirror img.ProseMirror-selectednode { outline: 3px solid ${accent}; }
-                .ProseMirror blockquote { border-left: 4px solid #ddd; padding-left: 1rem; color: #666; }
+                .ProseMirror blockquote { border-left: 4px solid var(--divider); padding-left: 1rem; color: var(--sub); }
                 .ProseMirror a { color: ${accent}; text-decoration: underline; cursor: pointer; }
-                .ProseMirror iframe { border-radius: 4px; border: 2px solid #222; }
+                .ProseMirror iframe { border-radius: 4px; border: 2px solid var(--border); }
+                .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 { color: var(--text); }
             `}</style>
         </div>
     );

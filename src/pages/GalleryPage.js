@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "../supabase";
 import SectionHeader from "../components/SectionHeader";
 
-const TABS = ["projects", "personal"];
-
 function parseFlairs(raw) {
     try { return JSON.parse(raw || "[]"); } catch { return []; }
 }
@@ -42,7 +40,7 @@ function ImageGrid({ items, accent, onSelect, getSrc, getAlt }) {
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}>
             {items.map((item, i) => (
                 <div key={i} onClick={() => onSelect(item)} className="cursor-pointer overflow-hidden"
-                     style={{ border: `2px solid ${accent}`, background: "#e0e0e0", aspectRatio: "4/3" }}
+                     style={{ border: `2px solid ${accent}`, background: "var(--img-bg)", aspectRatio: "4/3" }}
                      onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
                      onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
                     <img src={getSrc(item)} alt={getAlt(item)}
@@ -53,19 +51,8 @@ function ImageGrid({ items, accent, onSelect, getSrc, getAlt }) {
     );
 }
 
-function ProjectTab({ accent, projectImages }) {
-    const [activeFlair, setActiveFlair] = useState(null);
-    const allFlairs = [...new Set(projectImages.flatMap(i => i.flairs))];
-    const filtered = activeFlair ? projectImages.filter(i => i.flairs.includes(activeFlair)) : projectImages;
-    return { allFlairs, filtered, activeFlair, setActiveFlair };
-}
-
 export default function GalleryPage({ accent, published }) {
     const [tab, setTab] = useState("projects");
-    const [prevTab, setPrevTab] = useState(null);
-    const [slideDir, setSlideDir] = useState(null);
-    const [animating, setAnimating] = useState(false);
-
     const [galleryImages, setGalleryImages] = useState([]);
     const [lightbox, setLightbox] = useState(null);
     const [activeFlair, setActiveFlair] = useState(null);
@@ -76,14 +63,9 @@ export default function GalleryPage({ accent, published }) {
     }, []);
 
     const switchTab = (newTab) => {
-        if (newTab === tab || animating) return;
-        const dir = TABS.indexOf(newTab) > TABS.indexOf(tab) ? "left" : "right";
-        setPrevTab(tab);
-        setSlideDir(dir);
-        setAnimating(true);
+        if (newTab === tab) return;
         setTab(newTab);
         setActiveFlair(null);
-        setTimeout(() => { setAnimating(false); setPrevTab(null); setSlideDir(null); }, 320);
     };
 
     const projectImages = published.flatMap(p => {
@@ -95,28 +77,30 @@ export default function GalleryPage({ accent, published }) {
     const allFlairs = [...new Set(projectImages.flatMap(i => i.flairs))];
     const filteredProjectImages = activeFlair ? projectImages.filter(i => i.flairs.includes(activeFlair)) : projectImages;
 
+    const FlairFilter = () => allFlairs.length > 0 ? (
+        <div className="flex flex-wrap gap-2 mb-5">
+            <button onClick={() => setActiveFlair(null)} className="special-elite text-xs px-3 py-1 cursor-pointer"
+                    style={{ background: !activeFlair ? accent : "var(--img-bg)", color: !activeFlair ? "#fff" : "var(--sub)", border: `1px solid ${accent}` }}>All</button>
+            {allFlairs.map(f => (
+                <button key={f} onClick={() => setActiveFlair(activeFlair === f ? null : f)} className="special-elite text-xs px-3 py-1 cursor-pointer"
+                        style={{ background: activeFlair === f ? accent : "var(--img-bg)", color: activeFlair === f ? "#fff" : "var(--sub)", border: `1px solid ${accent}` }}>{f}</button>
+            ))}
+        </div>
+    ) : null;
+
     const renderTab = (which) => {
         if (which === "projects") return (
             <div>
-                {allFlairs.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-5">
-                        <button onClick={() => setActiveFlair(null)} className="special-elite text-xs px-3 py-1 cursor-pointer"
-                                style={{ background: !activeFlair ? accent : "#eee", color: !activeFlair ? "#fff" : "#555", border: `1px solid ${accent}` }}>All</button>
-                        {allFlairs.map(f => (
-                            <button key={f} onClick={() => setActiveFlair(activeFlair === f ? null : f)} className="special-elite text-xs px-3 py-1 cursor-pointer"
-                                    style={{ background: activeFlair === f ? accent : "#eee", color: activeFlair === f ? "#fff" : "#555", border: `1px solid ${accent}` }}>{f}</button>
-                        ))}
-                    </div>
-                )}
+                <FlairFilter />
                 {filteredProjectImages.length === 0
-                    ? <div className="p-5 special-elite text-xs" style={{ color: "#555", border: "2px solid #222", background: "#fff" }}>No project images found.</div>
+                    ? <div className="p-5 special-elite text-xs" style={{ color: "var(--sub)", border: "2px solid var(--border)", background: "var(--surface)" }}>No project images found.</div>
                     : <ImageGrid items={filteredProjectImages} accent={accent} onSelect={setLightbox} getSrc={i => i.src} getAlt={i => i.projectTitle} />}
             </div>
         );
         return (
             <div>
                 {galleryImages.length === 0
-                    ? <div className="p-5 special-elite text-xs" style={{ color: "#555", border: "2px solid #222", background: "#fff" }}>No personal photos yet. Upload via Admin panel.</div>
+                    ? <div className="p-5 special-elite text-xs" style={{ color: "var(--sub)", border: "2px solid var(--border)", background: "var(--surface)" }}>No personal photos yet. Upload via Admin panel.</div>
                     : <ImageGrid items={galleryImages} accent={accent} onSelect={setLightbox} getSrc={i => i.url} getAlt={i => i.caption || ""} />}
             </div>
         );
@@ -130,22 +114,13 @@ export default function GalleryPage({ accent, published }) {
                 {[{ key: "projects", label: "Project Photos" }, { key: "personal", label: "Personal" }].map(t => (
                     <button key={t.key} onClick={() => switchTab(t.key)}
                             className="special-elite uppercase text-xs tracking-widest px-5 py-2 cursor-pointer"
-                            style={{ background: tab === t.key ? accent : "transparent", color: tab === t.key ? "#fff" : "#666", border: "none", letterSpacing: "2px", transition: "background 0.15s, color 0.15s" }}>
+                            style={{ background: tab === t.key ? accent : "transparent", color: tab === t.key ? "#fff" : "var(--sub)", border: "none", letterSpacing: "2px", transition: "background 0.15s, color 0.15s" }}>
                         {t.label}
                     </button>
                 ))}
             </div>
 
-            <div className="relative overflow-hidden">
-                {animating && prevTab && (
-                    <div className="absolute inset-0" style={{ transform: slideDir === "left" ? "translateX(-100%)" : "translateX(100%)", transition: "transform 0.32s ease", pointerEvents: "none" }}>
-                        {renderTab(prevTab)}
-                    </div>
-                )}
-                <div style={{ animation: animating ? `slideIn${slideDir === "left" ? "Left" : "Right"} 0.32s ease forwards` : "none" }}>
-                    {renderTab(tab)}
-                </div>
-            </div>
+            {renderTab(tab)}
 
             {lightbox && <Lightbox item={lightbox} accent={accent} onClose={() => setLightbox(null)} />}
         </div>
