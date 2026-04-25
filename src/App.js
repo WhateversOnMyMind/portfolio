@@ -213,7 +213,7 @@ function Btn({ onClick, children, outline, style = {} }) {
 function ProjectCard({ p, onClick, accent }) {
     const tmp = document.createElement("div");
     tmp.innerHTML = p.body || "";
-    const txt = (tmp.textContent || "").substring(0, 115);
+    const txt = tmp.textContent || "";
     const imgMatch = (p.body || "").match(/<img[^>]+src="([^"]+)"/);
     return (
         <div onClick={onClick} className="cursor-pointer" style={{ border: "2px solid #222", background: "#fff", transition: "background 0.1s" }}
@@ -226,7 +226,7 @@ function ProjectCard({ p, onClick, accent }) {
             <div className="p-4">
                 <h3 className="special-elite text-sm mb-1" style={{ letterSpacing: "1px" }}>{p.title}</h3>
                 <div className="special-elite text-xs uppercase mb-2" style={{ color: "#777", letterSpacing: "1px" }}>{p.date}</div>
-                <p className="text-xs leading-relaxed" style={{ color: "#555" }}>{txt}{txt.length >= 115 ? "..." : ""}</p>
+                <p className="text-xs leading-relaxed" style={{ color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{txt}</p>
             </div>
         </div>
     );
@@ -296,10 +296,10 @@ function AboutPage({ accent, accentDark, navigate }) {
                 </div>
                 <div className="md:col-span-2 p-6" style={{ border: "2px solid #222", background: "#fff" }}>
                     <h2 className="special-elite text-2xl mb-1">Dongjae Ko</h2>
-                    <div className="special-elite text-xs uppercase mb-5" style={{ color: accent, letterSpacing: "2px" }}>// Maker &middot; Developer &middot; Writer</div>
-                    <p className="text-sm mb-3 leading-relaxed" style={{ color: "#555" }}>I build things. Sometimes hardware, sometimes software, sometimes writing. I care about making things that are honest and useful.</p>
-                    <p className="text-sm mb-3 leading-relaxed" style={{ color: "#555" }}>Currently studying at the Korean Minjok Leadership Academy. Focused on Electrical Engineering and exploring defense technology.</p>
-                    <p className="text-sm mb-6 leading-relaxed" style={{ color: "#555" }}>This site exists to document the work. It's not a funnel.</p>
+                    <div className="special-elite text-xs uppercase mb-5" style={{ color: accent, letterSpacing: "2px" }}>// Electrical Engineering</div>
+                    <p className="text-sm mb-3 leading-relaxed" style={{ color: "#555" }}>I enjoy building novel stuff because its fun.</p>
+                    <p className="text-sm mb-3 leading-relaxed" style={{ color: "#555" }}>Currently studying at the Korean Minjok Leadership Academy. Focused on electrical engineering and currently interested in RF.</p>
+                    <p className="text-sm mb-6 leading-relaxed" style={{ color: "#555" }}>This site exists to document the work.</p>
                     <Btn onClick={() => navigate("contact")} style={{ background: accent }}>Get in Touch</Btn>
                 </div>
             </div>
