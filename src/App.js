@@ -400,8 +400,9 @@ function ResumePage({ accent }) {
             items: [
                 {
                     lines: [
-                        "Hardware: PCB design (KiCAD), oscilloscopes, soldering, hardware debugging",
-                        "Software: Python, JavaScript, Java, C++, Git"
+                        "Hardware: PCB design (KiCAD), Oscilloscopes, Soldering, Spectrometers",
+                        "Software: Python, JavaScript, Java, C++, Git, OceanView",
+                        "Sim: Ansys Mechanical, LAMMPS, OVITO, Moltemplate, Basilisk CFD"
                     ],
                 },
             ],
