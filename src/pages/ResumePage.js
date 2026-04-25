@@ -74,7 +74,7 @@ export default function ResumePage({ accent }) {
     return (
         <div>
             <SectionHeader title="Resume" sub="experience & skills" accent={accent} />
-            <div className="max-w-3xl p-8" style={{ border: "2px solid #222", background: "#fff" }}>
+            <div className="max-w-3xl p-4 md:p-8" style={{ border: "2px solid #222", background: "#fff" }}>
                 <div className="special-elite text-3xl mb-1">Dongjae Ko</div>
                 <div className="special-elite text-xs mb-7" style={{ color: "#666", letterSpacing: "1px" }}>debutgacc@gmail.com &nbsp;&middot;&nbsp; Gangwon, South Korea &nbsp;&middot;&nbsp; github.com/WhateversOnMyMind</div>
                 {RESUME_SECTIONS.map(sec => (

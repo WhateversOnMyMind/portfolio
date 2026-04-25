@@ -87,7 +87,7 @@ export default function App() {
                                     adminErr={adminErr} onSubmit={submitAdminPw} onCancel={() => setAdminOpen(false)} />
             )}
 
-            <div className="max-w-[1100px] mx-auto px-5 py-8 relative overflow-hidden">
+            <div className="max-w-[1100px] mx-auto px-3 md:px-5 py-5 md:py-8 relative">
                 {adminOpen && adminUnlocked ? (
                     <AdminPanel accent={accent} projects={projects} setProjects={setProjects}
                                 editingProject={editingProject} setEditingProject={setEditingProject} fetchProjects={fetchProjects} />

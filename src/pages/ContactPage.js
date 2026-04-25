@@ -17,7 +17,7 @@ export default function ContactPage({ accent }) {
         <div>
             <SectionHeader title="Contact" sub="get in touch" accent={accent} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-6" style={{ border: "2px solid #222", background: "#fff" }}>
+                <div className="p-4 md:p-6" style={{ border: "2px solid #222", background: "#fff" }}>
                     <h2 className="special-elite text-sm uppercase mb-5" style={{ color: accent, letterSpacing: "2px" }}>// Send a Message</h2>
                     <div className="mb-4"><label style={labelStyle}>Name</label><input value={form.name} onChange={set("name")} placeholder="Your name" style={inputStyle} /></div>
                     <div className="mb-4"><label style={labelStyle}>Email</label><input value={form.email} onChange={set("email")} placeholder="your@email.com" style={inputStyle} /></div>
@@ -25,7 +25,7 @@ export default function ContactPage({ accent }) {
                     <div className="mb-5"><label style={labelStyle}>Message</label><textarea value={form.message} onChange={set("message")} rows={5} placeholder="Your message..." style={{ ...inputStyle, resize: "vertical" }} /></div>
                     <Btn onClick={handleSend} style={{ background: accent }}>Send Message</Btn>
                 </div>
-                <div className="p-6" style={{ border: "2px solid #222", background: "#fff" }}>
+                <div className="p-4 md:p-6" style={{ border: "2px solid #222", background: "#fff" }}>
                     <h2 className="special-elite text-sm uppercase mb-5" style={{ color: accent, letterSpacing: "2px" }}>// Find Me</h2>
                     {[["Email", "debutgacc@gmail.com"], ["GitHub", "github.com/WhateversOnMyMind"], ["Location", "Gangwon, South Korea"]].map(([l, v]) => (
                         <div key={l} className="flex gap-3 mb-3 text-sm items-start">

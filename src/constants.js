@@ -5,5 +5,5 @@ export const THEMES = {
 };
 
 export const ADMIN_PW = process.env.REACT_APP_ADMIN_PW;
-export const PAGES = ["home", "about", "projects", "resume", "contact"];
+export const PAGES = ["home", "about", "projects", "gallery", "resume", "contact"];
 export const GOOGLE_FONT = `@import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');`;

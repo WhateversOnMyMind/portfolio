@@ -7,7 +7,7 @@ export default function HomePage({ accent, accentDark, published, navigate, open
         <div>
             <SectionHeader title="Hi!" sub="welcome to my portfolio" accent={accent} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 p-7" style={{ border: "2px solid #222", background: "#fff" }}>
+                <div className="md:col-span-2 p-5 md:p-7" style={{ border: "2px solid #222", background: "#fff" }}>
                     <h2 className="special-elite text-3xl mb-4 leading-snug">I like making things<br />and seeing them work.</h2>
                     <p className="text-sm mb-5 leading-relaxed" style={{ color: "#555" }}>
                         This site is where I put things I've made or designed. It's a record more than a resume.

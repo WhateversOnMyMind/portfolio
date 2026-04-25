@@ -8,23 +8,58 @@ import ImageResize from "tiptap-extension-resize-image";
 import Youtube from "@tiptap/extension-youtube";
 import { supabase } from "../supabase";
 
+function parseFlairs(raw) {
+    try { return JSON.parse(raw || "[]"); } catch { return []; }
+}
+
 export default function AdminPanel({ accent, projects, setProjects, editingProject, setEditingProject, fetchProjects }) {
     const [title, setTitle] = useState("");
     const [date, setDate] = useState(new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }));
     const [status, setStatus] = useState("draft");
+    const [flairs, setFlairs] = useState([]);
+    const [flairInput, setFlairInput] = useState("");
     const [saveMsg, setSaveMsg] = useState("");
     const [saving, setSaving] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
 
+    const [galleryImages, setGalleryImages] = useState([]);
+    const [uploadingGallery, setUploadingGallery] = useState(false);
+    const [galleryCaption, setGalleryCaption] = useState("");
+
+    useEffect(() => { fetchGallery(); }, []);
+
+    const fetchGallery = async () => {
+        const { data } = await supabase.from("gallery").select("*").order("created", { ascending: false });
+        if (data) setGalleryImages(data);
+    };
+
     const handleImageUpload = async (file) => {
         setUploadingImage(true);
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
         const { error } = await supabase.storage.from('portfolio-images').upload(fileName, file);
-        if (error) { alert("Image upload failed: " + error.message); setUploadingImage(false); return null; }
+        if (error) { alert("Upload failed: " + error.message); setUploadingImage(false); return null; }
         const { data } = supabase.storage.from('portfolio-images').getPublicUrl(fileName);
         setUploadingImage(false);
         return data.publicUrl;
+    };
+
+    const uploadGalleryImage = async (file) => {
+        setUploadingGallery(true);
+        const fileName = `gallery/${Date.now()}-${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
+        const { error } = await supabase.storage.from('portfolio-images').upload(fileName, file);
+        if (error) { alert("Upload failed: " + error.message); setUploadingGallery(false); return; }
+        const { data } = supabase.storage.from('portfolio-images').getPublicUrl(fileName);
+        const id = Date.now();
+        await supabase.from("gallery").insert([{ id, url: data.publicUrl, caption: galleryCaption, created: id }]);
+        setGalleryCaption("");
+        await fetchGallery();
+        setUploadingGallery(false);
+    };
+
+    const deleteGalleryImage = async (id) => {
+        if (!window.confirm("Delete this image?")) return;
+        await supabase.from("gallery").delete().eq("id", id);
+        setGalleryImages(prev => prev.filter(x => x.id !== id));
     };
 
     const editor = useEditor({
@@ -43,7 +78,7 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                 const items = event.clipboardData?.items;
                 if (!items) return false;
                 for (const item of items) {
-                    if (item.type.indexOf("image") === 0) {
+                    if (item.type.startsWith("image/")) {
                         event.preventDefault();
                         handleImageUpload(item.getAsFile()).then(url => { if (url) editor.chain().focus().setImage({ src: url }).run(); });
                         return true;
@@ -54,7 +89,7 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
             handleDrop: (view, event, slice, moved) => {
                 if (!moved && event.dataTransfer?.files?.length > 0) {
                     const file = event.dataTransfer.files[0];
-                    if (file.type.indexOf("image") === 0) {
+                    if (file.type.startsWith("image/")) {
                         event.preventDefault();
                         handleImageUpload(file).then(url => { if (url) editor.chain().focus().setImage({ src: url }).run(); });
                         return true;
@@ -68,7 +103,13 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
     useEffect(() => {
         if (editingProject && editor) {
             const p = projects.find(x => x.id === editingProject);
-            if (p) { setTitle(p.title); setDate(p.date); setStatus(p.status); editor.commands.setContent(p.body || ""); }
+            if (p) {
+                setTitle(p.title);
+                setDate(p.date);
+                setStatus(p.status);
+                setFlairs(parseFlairs(p.flairs));
+                editor.commands.setContent(p.body || "");
+            }
         }
     }, [editingProject, editor]);
 
@@ -77,14 +118,22 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
         setTitle("");
         setDate(new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }));
         setStatus("draft");
+        setFlairs([]);
+        setFlairInput("");
         editor?.commands.clearContent();
         setSaveMsg("");
+    };
+
+    const addFlair = () => {
+        const f = flairInput.trim();
+        if (f && !flairs.includes(f)) setFlairs(prev => [...prev, f]);
+        setFlairInput("");
     };
 
     const save = async () => {
         if (!title.trim()) return alert("Title required.");
         setSaving(true);
-        const payload = { title, date, status, body: editor?.getHTML() || "", updated: Date.now() };
+        const payload = { title, date, status, flairs: JSON.stringify(flairs), body: editor?.getHTML() || "", updated: Date.now() };
         if (editingProject) {
             const { error } = await supabase.from("projects").update(payload).eq("id", editingProject);
             if (error) alert("Save failed: " + error.message);
@@ -113,8 +162,9 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
     };
 
     const tbBtn = (label, action, isActive = false) => (
-        <button onClick={action} className="px-2 py-1 text-xs cursor-pointer rounded-sm transition-colors"
-                style={{ fontFamily: "monospace", background: isActive ? accent : "transparent", color: isActive ? "#fff" : "#333", border: "1px solid transparent" }}
+        <button onClick={action}
+                className="px-1 py-0.5 md:px-2 md:py-1 text-xs cursor-pointer rounded-sm"
+                style={{ fontFamily: "monospace", background: isActive ? accent : "transparent", color: isActive ? "#fff" : "#333", border: "1px solid transparent", flexShrink: 0, whiteSpace: "nowrap" }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "#e0e0e0"; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
             {label}
@@ -132,73 +182,105 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
 
     return (
         <div>
+            {/* Header */}
             <div className="flex justify-between items-baseline pb-2 mb-5" style={{ borderBottom: `3px solid ${accent}` }}>
                 <h1 className="special-elite text-2xl uppercase tracking-widest">Workspace</h1>
                 {editingProject && <span className="special-elite text-xs text-gray-500">Editing ID: {editingProject}</span>}
             </div>
 
-            <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: "1fr 150px 120px" }}>
-                <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Document Title" className="p-3 text-lg font-bold" style={{ border: "1px solid #ccc" }} />
-                <input value={date} onChange={e => setDate(e.target.value)} className="p-3 text-sm special-elite" style={{ border: "1px solid #ccc" }} />
-                <select value={status} onChange={e => setStatus(e.target.value)} className="p-3 text-sm special-elite" style={{ border: "1px solid #ccc" }}>
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                </select>
+            {/* Metadata row */}
+            <div className="flex flex-col gap-3 mb-3">
+                <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Document Title"
+                       className="w-full p-3 text-lg font-bold" style={{ border: "1px solid #ccc" }} />
+                <div className="flex gap-3">
+                    <input value={date} onChange={e => setDate(e.target.value)}
+                           className="flex-1 p-3 text-sm special-elite" style={{ border: "1px solid #ccc" }} />
+                    <select value={status} onChange={e => setStatus(e.target.value)}
+                            className="p-3 text-sm special-elite" style={{ border: "1px solid #ccc", width: "130px" }}>
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                    </select>
+                </div>
             </div>
 
+            {/* Flairs row */}
+            <div className="flex flex-wrap gap-2 mb-4 items-center">
+                <span className="special-elite text-xs uppercase" style={{ color: "#666", letterSpacing: "1px" }}>Flairs:</span>
+                {flairs.map(f => (
+                    <span key={f} className="special-elite text-xs px-2 py-0.5 flex items-center gap-1"
+                          style={{ background: accent, color: "#fff" }}>
+                        {f}
+                        <button onClick={() => setFlairs(prev => prev.filter(x => x !== f))}
+                                className="cursor-pointer leading-none" style={{ color: "#fff", background: "none", border: "none", fontSize: "14px", lineHeight: 1 }}>×</button>
+                    </span>
+                ))}
+                <input value={flairInput} onChange={e => setFlairInput(e.target.value)}
+                       onKeyDown={e => e.key === "Enter" && addFlair()}
+                       placeholder="Add flair..." className="p-1 text-xs special-elite"
+                       style={{ border: "1px solid #ccc", width: "110px", outline: "none" }} />
+                <button onClick={addFlair} className="special-elite text-xs px-2 py-1 cursor-pointer"
+                        style={{ background: "#222", color: "#fff", border: "none" }}>+</button>
+            </div>
+
+            {/* Editor */}
             <div style={{ background: "#f8f9fa", border: "1px solid #c7c7c7", borderRadius: "4px" }}>
-                <div className="sticky top-14 z-40 flex flex-wrap gap-1 p-2 items-center" style={{ background: "#edf2fa", borderBottom: "1px solid #c7c7c7", borderRadius: "4px 4px 0 0" }}>
+                <div className="md:sticky md:top-14 z-40 flex flex-nowrap md:flex-wrap gap-0.5 md:gap-1 p-1.5 md:p-2 items-center overflow-x-auto"
+                     style={{ background: "#edf2fa", borderBottom: "1px solid #c7c7c7", borderRadius: "4px 4px 0 0" }}>
                     {editor && (
                         <>
-                            <div className="flex gap-1 pr-2 mr-2" style={{ borderRight: "1px solid #ccc" }}>
+                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid #ccc", flexShrink: 0 }}>
                                 {tbBtn("B", () => editor.chain().focus().toggleBold().run(), editor.isActive("bold"))}
                                 {tbBtn("I", () => editor.chain().focus().toggleItalic().run(), editor.isActive("italic"))}
                                 {tbBtn("U", () => editor.chain().focus().toggleUnderline().run(), editor.isActive("underline"))}
                                 {tbBtn("S", () => editor.chain().focus().toggleStrike().run(), editor.isActive("strike"))}
                             </div>
-                            <div className="flex gap-1 pr-2 mr-2" style={{ borderRight: "1px solid #ccc" }}>
+                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid #ccc", flexShrink: 0 }}>
                                 {tbBtn("H1", () => editor.chain().focus().toggleHeading({ level: 1 }).run(), editor.isActive("heading", { level: 1 }))}
                                 {tbBtn("H2", () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive("heading", { level: 2 }))}
                                 {tbBtn("H3", () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive("heading", { level: 3 }))}
                                 {tbBtn("P", () => editor.chain().focus().setParagraph().run(), editor.isActive("paragraph"))}
                             </div>
-                            <div className="flex gap-1 pr-2 mr-2" style={{ borderRight: "1px solid #ccc" }}>
-                                {tbBtn("Left", () => editor.chain().focus().setTextAlign('left').run(), editor.isActive({ textAlign: 'left' }))}
-                                {tbBtn("Center", () => editor.chain().focus().setTextAlign('center').run(), editor.isActive({ textAlign: 'center' }))}
-                                {tbBtn("Right", () => editor.chain().focus().setTextAlign('right').run(), editor.isActive({ textAlign: 'right' }))}
-                                {tbBtn("Justify", () => editor.chain().focus().setTextAlign('justify').run(), editor.isActive({ textAlign: 'justify' }))}
+                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid #ccc", flexShrink: 0 }}>
+                                {tbBtn("←", () => editor.chain().focus().setTextAlign('left').run(), editor.isActive({ textAlign: 'left' }))}
+                                {tbBtn("↔", () => editor.chain().focus().setTextAlign('center').run(), editor.isActive({ textAlign: 'center' }))}
+                                {tbBtn("→", () => editor.chain().focus().setTextAlign('right').run(), editor.isActive({ textAlign: 'right' }))}
+                                {tbBtn("≡", () => editor.chain().focus().setTextAlign('justify').run(), editor.isActive({ textAlign: 'justify' }))}
                             </div>
-                            <div className="flex gap-1 pr-2 mr-2" style={{ borderRight: "1px solid #ccc" }}>
-                                {tbBtn("List", () => editor.chain().focus().toggleBulletList().run(), editor.isActive("bulletList"))}
-                                {tbBtn("Num", () => editor.chain().focus().toggleOrderedList().run(), editor.isActive("orderedList"))}
-                                {tbBtn("Quote", () => editor.chain().focus().toggleBlockquote().run(), editor.isActive("blockquote"))}
+                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid #ccc", flexShrink: 0 }}>
+                                {tbBtn("•—", () => editor.chain().focus().toggleBulletList().run(), editor.isActive("bulletList"))}
+                                {tbBtn("1.", () => editor.chain().focus().toggleOrderedList().run(), editor.isActive("orderedList"))}
+                                {tbBtn("❝", () => editor.chain().focus().toggleBlockquote().run(), editor.isActive("blockquote"))}
                             </div>
-                            <div className="flex gap-1 pr-2 mr-2" style={{ borderRight: "1px solid #ccc" }}>
+                            <div className="flex gap-0.5 md:gap-1" style={{ flexShrink: 0 }}>
                                 {tbBtn("Link", setLink, editor.isActive("link"))}
-                                {tbBtn("Img(URL)", () => { const url = window.prompt('Image URL'); if (url) editor.chain().focus().setImage({ src: url }).run(); })}
-                                {tbBtn("YouTube", () => { const url = window.prompt("Enter YouTube URL:"); if (url) editor.chain().focus().setYoutubeVideo({ src: url }).run(); })}
+                                {tbBtn("Img", () => { const url = window.prompt('Image URL'); if (url) editor.chain().focus().setImage({ src: url }).run(); })}
+                                {tbBtn("YT", () => { const url = window.prompt("YouTube URL:"); if (url) editor.chain().focus().setYoutubeVideo({ src: url }).run(); })}
                             </div>
-                            <div className="text-xs text-gray-500 ml-auto flex items-center gap-2">
-                                {uploadingImage ? "Uploading image..." : "Drag/Paste images supported"}
+                            <div className="hidden md:block text-xs text-gray-500 ml-auto">
+                                {uploadingImage ? "Uploading..." : "Drag/Paste images supported"}
                             </div>
                         </>
                     )}
                 </div>
-                <div className="p-8 mx-auto my-4 bg-white shadow-sm" style={{ maxWidth: "850px", border: "1px solid #ddd", minHeight: "600px" }}>
+                <div className="p-3 md:p-8 mx-auto my-2 md:my-4 bg-white shadow-sm" style={{ maxWidth: "850px", border: "1px solid #ddd", minHeight: "400px" }}>
                     <EditorContent editor={editor} />
                 </div>
             </div>
 
+            {/* Action buttons */}
             <div className="flex gap-3 mt-4 items-center">
-                <button onClick={save} disabled={saving} className="special-elite uppercase text-xs tracking-widest px-6 py-3 cursor-pointer text-white" style={{ background: accent, opacity: saving ? 0.7 : 1 }}>
+                <button onClick={save} disabled={saving} className="special-elite uppercase text-xs tracking-widest px-6 py-3 cursor-pointer text-white"
+                        style={{ background: accent, opacity: saving ? 0.7 : 1 }}>
                     {saving ? "Saving..." : "Commit Document"}
                 </button>
-                <button onClick={clearEditor} className="special-elite uppercase text-xs tracking-widest px-6 py-3 cursor-pointer" style={{ border: "2px solid #222" }}>
+                <button onClick={clearEditor} className="special-elite uppercase text-xs tracking-widest px-6 py-3 cursor-pointer"
+                        style={{ border: "2px solid #222" }}>
                     Start Fresh
                 </button>
                 {saveMsg && <span className="special-elite text-sm text-green-700 ml-2">{saveMsg}</span>}
             </div>
 
+            {/* Document Registry */}
             <div className="mt-16 pt-8" style={{ borderTop: "3px solid #222" }}>
                 <h3 className="special-elite text-sm uppercase mb-6 tracking-widest" style={{ color: accent }}>// Document Registry</h3>
                 <div className="grid gap-2">
@@ -206,12 +288,19 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                         <div key={p.id} className="flex justify-between items-center p-4 bg-white" style={{ border: "1px solid #222" }}>
                             <div>
                                 <span className="font-bold text-lg mr-3">{p.title}</span>
-                                {p.status === "draft" && <span className="text-xs px-2 py-1 bg-yellow-200 text-yellow-800 rounded-sm font-mono">DRAFT</span>}
-                                <div className="text-sm text-gray-500 mt-1 font-mono">{p.date} &middot; ID: {p.id}</div>
+                                {p.status === "draft" && <span className="text-xs px-2 py-1 bg-yellow-200 text-yellow-800 font-mono">DRAFT</span>}
+                                {parseFlairs(p.flairs).length > 0 && (
+                                    <span className="ml-2 text-xs special-elite" style={{ color: accent }}>
+                                        [{parseFlairs(p.flairs).join(", ")}]
+                                    </span>
+                                )}
+                                <div className="text-sm text-gray-500 mt-1 font-mono">{p.date} · ID: {p.id}</div>
                             </div>
                             <div className="flex gap-3 special-elite text-sm">
                                 <button onClick={() => setEditingProject(p.id)} className="hover:underline text-blue-700">Load</button>
-                                <button onClick={() => togglePublish(p.id, p.status)} className="hover:underline">{p.status === "published" ? "Unpublish" : "Publish"}</button>
+                                <button onClick={() => togglePublish(p.id, p.status)} className="hover:underline">
+                                    {p.status === "published" ? "Unpublish" : "Publish"}
+                                </button>
                                 <button onClick={() => deleteProject(p.id)} className="hover:underline text-red-600">Drop</button>
                             </div>
                         </div>
@@ -219,9 +308,49 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                 </div>
             </div>
 
+            {/* Gallery Management */}
+            <div className="mt-16 pt-8" style={{ borderTop: "3px solid #222" }}>
+                <h3 className="special-elite text-sm uppercase mb-6 tracking-widest" style={{ color: accent }}>// Personal Gallery</h3>
+
+                <div className="flex gap-3 mb-6 items-center flex-wrap">
+                    <input value={galleryCaption} onChange={e => setGalleryCaption(e.target.value)}
+                           placeholder="Caption (optional)" className="p-2 text-sm special-elite"
+                           style={{ border: "1px solid #ccc", width: "220px" }} />
+                    <label className="special-elite uppercase text-xs tracking-widest px-4 py-2 cursor-pointer text-white"
+                           style={{ background: uploadingGallery ? "#888" : accent, border: "2px solid #222" }}>
+                        {uploadingGallery ? "Uploading..." : "Upload Photo"}
+                        <input type="file" accept="image/*" className="hidden"
+                               onChange={e => { if (e.target.files[0]) uploadGalleryImage(e.target.files[0]); e.target.value = ""; }}
+                               disabled={uploadingGallery} />
+                    </label>
+                </div>
+
+                {galleryImages.length > 0 && (
+                    <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}>
+                        {galleryImages.map(img => (
+                            <div key={img.id} style={{ position: "relative", border: `2px solid ${accent}`, aspectRatio: "4/3", overflow: "hidden" }}>
+                                <img src={img.url} alt={img.caption || ""} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                {img.caption && (
+                                    <div className="special-elite text-xs px-1 py-0.5 absolute bottom-0 left-0 right-0"
+                                         style={{ background: "rgba(0,0,0,0.55)", color: "#fff" }}>{img.caption}</div>
+                                )}
+                                <button onClick={() => deleteGalleryImage(img.id)}
+                                        className="absolute top-1 right-1 special-elite text-xs cursor-pointer"
+                                        style={{ background: "#fff", border: `1px solid ${accent}`, color: accent, width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             <style>{`
                 .ProseMirror { outline: none; }
                 .ProseMirror p { margin-bottom: 1em; }
+                .ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1em; }
+                .ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1em; }
+                .ProseMirror li { margin-bottom: 0.25em; }
                 .ProseMirror img { max-width: 100%; height: auto; display: block; }
                 .ProseMirror img.ProseMirror-selectednode { outline: 3px solid ${accent}; }
                 .ProseMirror blockquote { border-left: 4px solid #ddd; padding-left: 1rem; color: #666; }

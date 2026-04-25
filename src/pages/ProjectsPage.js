@@ -1,7 +1,17 @@
+import { useState } from "react";
 import SectionHeader from "../components/SectionHeader";
 import ProjectCard from "../components/ProjectCard";
 
+function parseFlairs(raw) {
+    try { return JSON.parse(raw || "[]"); } catch { return []; }
+}
+
 export default function ProjectsPage({ accent, published, openProject, viewingProject, setViewingProject }) {
+    const [activeFlair, setActiveFlair] = useState(null);
+
+    const allFlairs = [...new Set(published.flatMap(p => parseFlairs(p.flairs)))];
+    const filtered = activeFlair ? published.filter(p => parseFlairs(p.flairs).includes(activeFlair)) : published;
+
     if (viewingProject) {
         return (
             <div>
@@ -10,9 +20,15 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
                       style={{ color: accent, borderBottom: `1px solid ${accent}`, letterSpacing: "1px" }}>
                     &larr; Back to Projects
                 </span>
-                <div className="max-w-3xl p-8" style={{ border: "2px solid #222", background: "#fff" }}>
+                <div className="max-w-3xl p-4 md:p-8" style={{ border: "2px solid #222", background: "#fff" }}>
                     <h1 className="special-elite text-3xl mb-2">{viewingProject.title}</h1>
-                    <div className="special-elite text-xs uppercase pb-4 mb-6" style={{ color: "#666", borderBottom: "2px solid #222", letterSpacing: "1px" }}>{viewingProject.date}</div>
+                    <div className="flex items-center gap-3 pb-4 mb-6" style={{ borderBottom: "2px solid #222" }}>
+                        <span className="special-elite text-xs uppercase" style={{ color: "#666", letterSpacing: "1px" }}>{viewingProject.date}</span>
+                        {parseFlairs(viewingProject.flairs).map(f => (
+                            <span key={f} className="special-elite text-xs px-2 py-0.5"
+                                  style={{ background: accent, color: "#fff", letterSpacing: "1px" }}>{f}</span>
+                        ))}
+                    </div>
                     <div className="prose-content" style={{ fontFamily: "Georgia, serif", fontSize: "16px", lineHeight: "1.85", color: "#1a1a1a" }}
                          dangerouslySetInnerHTML={{ __html: viewingProject.body }} />
                 </div>
@@ -20,13 +36,26 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
             </div>
         );
     }
+
     return (
         <div>
             <SectionHeader title="Projects" sub="things built and written about" accent={accent} />
-            {published.length === 0
+
+            {allFlairs.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-5">
+                    <button onClick={() => setActiveFlair(null)} className="special-elite text-xs px-3 py-1 cursor-pointer"
+                            style={{ background: !activeFlair ? accent : "#eee", color: !activeFlair ? "#fff" : "#555", border: `1px solid ${accent}` }}>All</button>
+                    {allFlairs.map(f => (
+                        <button key={f} onClick={() => setActiveFlair(activeFlair === f ? null : f)} className="special-elite text-xs px-3 py-1 cursor-pointer"
+                                style={{ background: activeFlair === f ? accent : "#eee", color: activeFlair === f ? "#fff" : "#555", border: `1px solid ${accent}` }}>{f}</button>
+                    ))}
+                </div>
+            )}
+
+            {filtered.length === 0
                 ? <div className="p-5 special-elite text-xs" style={{ color: "#555", border: "2px solid #222", background: "#fff" }}>Nothing published yet.</div>
                 : <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {published.map(p => <ProjectCard key={p.id} p={p} onClick={() => openProject(p.id)} accent={accent} />)}
+                    {filtered.map(p => <ProjectCard key={p.id} p={p} onClick={() => openProject(p.id)} accent={accent} />)}
                 </div>}
         </div>
     );
