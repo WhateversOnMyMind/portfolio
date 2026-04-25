@@ -43,14 +43,23 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
         return data.publicUrl;
     };
 
-    const uploadGalleryImage = async (file) => {
+    const uploadGalleryImages = async (files) => {
         setUploadingGallery(true);
-        const fileName = `gallery/${Date.now()}-${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
-        const { error } = await supabase.storage.from('portfolio-images').upload(fileName, file);
-        if (error) { alert("Upload failed: " + error.message); setUploadingGallery(false); return; }
-        const { data } = supabase.storage.from('portfolio-images').getPublicUrl(fileName);
-        const id = Date.now();
-        await supabase.from("gallery").insert([{ id, url: data.publicUrl, caption: galleryCaption, created: id }]);
+        const caption = galleryCaption;
+        const rows = [];
+        for (const file of files) {
+            const ext = file.name.split('.').pop();
+            const fileName = `gallery/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+            const { error } = await supabase.storage.from('portfolio-images').upload(fileName, file);
+            if (error) { alert(`Failed: ${file.name} — ${error.message}`); continue; }
+            const { data } = supabase.storage.from('portfolio-images').getPublicUrl(fileName);
+            const id = Date.now() + Math.floor(Math.random() * 1e6);
+            rows.push({ id, url: data.publicUrl, caption, created: id });
+        }
+        if (rows.length) {
+            const { error } = await supabase.from("gallery").insert(rows);
+            if (error) alert("DB insert failed: " + error.message);
+        }
         setGalleryCaption("");
         await fetchGallery();
         setUploadingGallery(false);
@@ -318,9 +327,9 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                            style={{ border: "1px solid #ccc", width: "220px" }} />
                     <label className="special-elite uppercase text-xs tracking-widest px-4 py-2 cursor-pointer text-white"
                            style={{ background: uploadingGallery ? "#888" : accent, border: "2px solid #222" }}>
-                        {uploadingGallery ? "Uploading..." : "Upload Photo"}
-                        <input type="file" accept="image/*" className="hidden"
-                               onChange={e => { if (e.target.files[0]) uploadGalleryImage(e.target.files[0]); e.target.value = ""; }}
+                        {uploadingGallery ? "Uploading..." : "Upload Photos"}
+                        <input type="file" accept="image/*" multiple className="hidden"
+                               onChange={e => { if (e.target.files?.length) uploadGalleryImages(Array.from(e.target.files)); e.target.value = ""; }}
                                disabled={uploadingGallery} />
                     </label>
                 </div>
