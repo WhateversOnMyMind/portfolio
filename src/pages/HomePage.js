@@ -15,7 +15,16 @@ export default function HomePage({ accent, accentDark, published, navigate, open
                     <div className="special-elite text-xs uppercase mb-6 pl-3" style={{ color: accent, borderLeft: `4px solid ${accent}`, letterSpacing: "2px" }}>
                         // Electrical Engineering
                     </div>
-                    <Btn onClick={() => navigate("projects")} style={{ background: accent }}>View Projects</Btn>
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <Btn onClick={() => navigate("projects")} style={{ background: accent }}>View Projects</Btn>
+                        <a href="/osci-art"
+                           className="special-elite uppercase text-xs tracking-widest px-4 py-2"
+                           style={{ background: "#020c02", color: "#39ff14", border: "2px solid #39ff14", letterSpacing: "2px", boxShadow: "0 0 12px rgba(57,255,20,0.25)", transition: "box-shadow 0.15s", textDecoration: "none", display: "inline-block" }}
+                           onMouseEnter={e => e.currentTarget.style.boxShadow = "0 0 22px rgba(57,255,20,0.5)"}
+                           onMouseLeave={e => e.currentTarget.style.boxShadow = "0 0 12px rgba(57,255,20,0.25)"}>
+                            ⬡ Osci · Art
+                        </a>
+                    </div>
                 </div>
                 <div className="flex flex-col gap-4">
                     <div className="p-4" style={{ border: "2px solid var(--border)", background: "var(--surface)" }}>

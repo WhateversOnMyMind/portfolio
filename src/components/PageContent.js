@@ -4,7 +4,6 @@ import ProjectsPage from "../pages/ProjectsPage";
 import GalleryPage from "../pages/GalleryPage";
 import ResumePage from "../pages/ResumePage";
 import ContactPage from "../pages/ContactPage";
-
 export default function PageContent({ page, accent, accentDark, published, navigate, openProject, viewingProject, setViewingProject }) {
     switch (page) {
         case "home":     return <HomePage accent={accent} accentDark={accentDark} published={published} navigate={navigate} openProject={openProject} />;

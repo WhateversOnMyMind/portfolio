@@ -7,7 +7,7 @@ import AdminPanel from "./components/AdminPanel";
 import PageContent from "./components/PageContent";
 
 export default function App() {
-    const [theme, setTheme] = useState("crimson");
+    const [theme, setTheme] = useState("black");
     const [page, setPage] = useState("home");
     const [prevPage, setPrevPage] = useState(null);
     const [slideDir, setSlideDir] = useState(null);
@@ -21,7 +21,7 @@ export default function App() {
     const [adminModalPw, setAdminModalPw] = useState("");
     const [adminErr, setAdminErr] = useState(false);
     const [themeTransitioning, setThemeTransitioning] = useState(false);
-    const [displayTheme, setDisplayTheme] = useState("crimson");
+    const [displayTheme, setDisplayTheme] = useState("black");
 
     const accent = THEMES[displayTheme].accent;
     const accentDark = THEMES[displayTheme].dark;

@@ -28,6 +28,11 @@ export default function Nav({ accent, page, adminOpen, adminUnlocked, theme, swi
                             {p === "resume" ? "Resumé" : p}
                         </a>
                     ))}
+                    <a href="/osci-art"
+                       className="special-elite flex items-center px-4 uppercase tracking-wide text-xs"
+                       style={{ borderRight: "1px solid rgba(255,255,255,0.2)", letterSpacing: "2px", color: "#39ff14" }}>
+                        OSCI·ART
+                    </a>
                 </div>
 
                 {/* Right controls */}
@@ -64,6 +69,11 @@ export default function Nav({ accent, page, adminOpen, adminUnlocked, theme, swi
                             {p === "resume" ? "Resumé" : p}
                         </a>
                     ))}
+                    <a href="/osci-art"
+                       className="special-elite flex items-center px-6 py-3 uppercase text-xs"
+                       style={{ borderBottom: "1px solid rgba(255,255,255,0.15)", letterSpacing: "2px", color: "#39ff14" }}>
+                        OSCI·ART
+                    </a>
                     <div className="flex gap-3 px-6 py-3 items-center" style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}>
                         <span className="special-elite text-xs text-white uppercase" style={{ letterSpacing: "1px", opacity: 0.7 }}>Theme:</span>
                         {Object.entries(THEMES).map(([k, v]) => (

@@ -7,6 +7,7 @@ import Link from "@tiptap/extension-link";
 import ImageResize from "tiptap-extension-resize-image";
 import Youtube from "@tiptap/extension-youtube";
 import { supabase } from "../supabase";
+import { compressImage } from "../utils/compressImage";
 
 function parseFlairs(raw) {
     try { return JSON.parse(raw || "[]"); } catch { return []; }
@@ -35,8 +36,9 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
 
     const handleImageUpload = async (file) => {
         setUploadingImage(true);
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
-        const { error } = await supabase.storage.from('portfolio-images').upload(fileName, file);
+        const compressed = await compressImage(file);
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+        const { error } = await supabase.storage.from('portfolio-images').upload(fileName, compressed);
         if (error) { alert("Upload failed: " + error.message); setUploadingImage(false); return null; }
         const { data } = supabase.storage.from('portfolio-images').getPublicUrl(fileName);
         setUploadingImage(false);
@@ -48,9 +50,9 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
         const caption = galleryCaption;
         const rows = [];
         for (const file of files) {
-            const ext = file.name.split('.').pop();
-            const fileName = `gallery/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
-            const { error } = await supabase.storage.from('portfolio-images').upload(fileName, file);
+            const compressed = await compressImage(file);
+            const fileName = `gallery/${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+            const { error } = await supabase.storage.from('portfolio-images').upload(fileName, compressed);
             if (error) { alert(`Failed: ${file.name} — ${error.message}`); continue; }
             const { data } = supabase.storage.from('portfolio-images').getPublicUrl(fileName);
             const id = Date.now() + Math.floor(Math.random() * 1e6);
