@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import SectionHeader from "../components/SectionHeader";
 import ProjectCard from "../components/ProjectCard";
 
@@ -8,6 +8,25 @@ function parseFlairs(raw) {
 
 export default function ProjectsPage({ accent, published, openProject, viewingProject, setViewingProject }) {
     const [activeFlair, setActiveFlair] = useState(null);
+    const bodyRef = useRef(null);
+
+    useEffect(() => {
+        if (!viewingProject || !bodyRef.current) return;
+        bodyRef.current.querySelectorAll("pre").forEach(pre => {
+            if (pre.querySelector(".copy-btn")) return;
+            const btn = document.createElement("button");
+            btn.textContent = "Copy";
+            btn.className = "copy-btn";
+            btn.addEventListener("click", () => {
+                navigator.clipboard.writeText(pre.innerText.replace(/^Copy\n?/, "")).then(() => {
+                    btn.textContent = "Copied!";
+                    setTimeout(() => { btn.textContent = "Copy"; }, 2000);
+                });
+            });
+            pre.style.position = "relative";
+            pre.appendChild(btn);
+        });
+    }, [viewingProject]);
 
     const allFlairs = [...new Set(published.flatMap(p => parseFlairs(p.flairs)))];
     const filtered = activeFlair ? published.filter(p => parseFlairs(p.flairs).includes(activeFlair)) : published;
@@ -29,7 +48,7 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
                                   style={{ background: accent, color: "#fff", letterSpacing: "1px" }}>{f}</span>
                         ))}
                     </div>
-                    <div className="prose-content" style={{ fontFamily: "Georgia, serif", fontSize: "16px", lineHeight: "1.85", color: "var(--text)" }}
+                    <div ref={bodyRef} className="prose-content" style={{ fontFamily: "Georgia, serif", fontSize: "16px", lineHeight: "1.85", color: "var(--text)" }}
                          dangerouslySetInnerHTML={{ __html: viewingProject.body }} />
                 </div>
                 <style>{`
@@ -43,6 +62,11 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
                     .prose-content ol { list-style-type: decimal; padding-left: 24px; margin-bottom: 16px; }
                     .prose-content li { margin-bottom: 4px; color: var(--text); }
                     .prose-content a { color: ${accent}; text-decoration: underline; }
+                    .prose-content code { font-family: monospace; background: rgba(0,0,0,0.07); border: 1px solid var(--divider); padding: 1px 5px; border-radius: 3px; font-size: 0.875em; }
+                    .prose-content pre { position: relative; background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 0.875em; padding: 16px; border-radius: 4px; overflow-x: auto; margin: 16px 0; }
+                    .prose-content pre code { background: none; border: none; padding: 0; font-size: inherit; color: inherit; }
+                    .copy-btn { position: absolute; top: 8px; right: 8px; font-family: monospace; font-size: 11px; padding: 3px 8px; background: rgba(255,255,255,0.12); color: #ccc; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer; transition: background 0.15s; }
+                    .copy-btn:hover { background: rgba(255,255,255,0.22); color: #fff; }
                 `}</style>
             </div>
         );

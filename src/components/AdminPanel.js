@@ -8,6 +8,7 @@ import ImageResize from "tiptap-extension-resize-image";
 import Youtube from "@tiptap/extension-youtube";
 import { supabase } from "../supabase";
 import { compressImage } from "../utils/compressImage";
+import { uploadToR2, deleteFromR2 } from "../utils/r2";
 
 function parseFlairs(raw) {
     try { return JSON.parse(raw || "[]"); } catch { return []; }
@@ -36,13 +37,17 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
 
     const handleImageUpload = async (file) => {
         setUploadingImage(true);
-        const compressed = await compressImage(file);
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
-        const { error } = await supabase.storage.from('portfolio-images').upload(fileName, compressed);
-        if (error) { alert("Upload failed: " + error.message); setUploadingImage(false); return null; }
-        const { data } = supabase.storage.from('portfolio-images').getPublicUrl(fileName);
-        setUploadingImage(false);
-        return data.publicUrl;
+        try {
+            const compressed = await compressImage(file);
+            const key = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+            const url = await uploadToR2(key, compressed);
+            setUploadingImage(false);
+            return url;
+        } catch (e) {
+            alert("Upload failed: " + e.message);
+            setUploadingImage(false);
+            return null;
+        }
     };
 
     const uploadGalleryImages = async (files) => {
@@ -50,13 +55,15 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
         const caption = galleryCaption;
         const rows = [];
         for (const file of files) {
-            const compressed = await compressImage(file);
-            const fileName = `gallery/${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
-            const { error } = await supabase.storage.from('portfolio-images').upload(fileName, compressed);
-            if (error) { alert(`Failed: ${file.name} — ${error.message}`); continue; }
-            const { data } = supabase.storage.from('portfolio-images').getPublicUrl(fileName);
-            const id = Date.now() + Math.floor(Math.random() * 1e6);
-            rows.push({ id, url: data.publicUrl, caption, created: id });
+            try {
+                const compressed = await compressImage(file);
+                const key = `gallery/${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+                const url = await uploadToR2(key, compressed);
+                const id = Date.now() + Math.floor(Math.random() * 1e6);
+                rows.push({ id, url, caption, created: id });
+            } catch (e) {
+                alert(`Failed: ${file.name} — ${e.message}`);
+            }
         }
         if (rows.length) {
             const { error } = await supabase.from("gallery").insert(rows);
@@ -69,6 +76,8 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
 
     const deleteGalleryImage = async (id) => {
         if (!window.confirm("Delete this image?")) return;
+        const img = galleryImages.find(x => x.id === id);
+        if (img?.url) await deleteFromR2(img.url).catch(() => {});
         await supabase.from("gallery").delete().eq("id", id);
         setGalleryImages(prev => prev.filter(x => x.id !== id));
     };
@@ -175,8 +184,8 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
     const tbBtn = (label, action, isActive = false) => (
         <button onClick={action}
                 className="px-1 py-0.5 md:px-2 md:py-1 text-xs cursor-pointer rounded-sm"
-                style={{ fontFamily: "monospace", background: isActive ? accent : "transparent", color: isActive ? "#fff" : "#333", border: "1px solid transparent", flexShrink: 0, whiteSpace: "nowrap" }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--hover)"; }}
+                style={{ fontFamily: "monospace", background: isActive ? accent : "transparent", color: "#fff", border: "1px solid transparent", flexShrink: 0, whiteSpace: "nowrap" }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.15)"; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
             {label}
         </button>
@@ -239,35 +248,39 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                      style={{ background: "var(--toolbar-bg)", borderBottom: "1px solid var(--toolbar-bdr)", borderRadius: "4px 4px 0 0" }}>
                     {editor && (
                         <>
-                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid #ccc", flexShrink: 0 }}>
+                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid rgba(255,255,255,0.2)", flexShrink: 0 }}>
                                 {tbBtn("B", () => editor.chain().focus().toggleBold().run(), editor.isActive("bold"))}
                                 {tbBtn("I", () => editor.chain().focus().toggleItalic().run(), editor.isActive("italic"))}
                                 {tbBtn("U", () => editor.chain().focus().toggleUnderline().run(), editor.isActive("underline"))}
                                 {tbBtn("S", () => editor.chain().focus().toggleStrike().run(), editor.isActive("strike"))}
                             </div>
-                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid #ccc", flexShrink: 0 }}>
+                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid rgba(255,255,255,0.2)", flexShrink: 0 }}>
                                 {tbBtn("H1", () => editor.chain().focus().toggleHeading({ level: 1 }).run(), editor.isActive("heading", { level: 1 }))}
                                 {tbBtn("H2", () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive("heading", { level: 2 }))}
                                 {tbBtn("H3", () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive("heading", { level: 3 }))}
                                 {tbBtn("P", () => editor.chain().focus().setParagraph().run(), editor.isActive("paragraph"))}
                             </div>
-                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid #ccc", flexShrink: 0 }}>
+                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid rgba(255,255,255,0.2)", flexShrink: 0 }}>
                                 {tbBtn("←", () => editor.chain().focus().setTextAlign('left').run(), editor.isActive({ textAlign: 'left' }))}
                                 {tbBtn("↔", () => editor.chain().focus().setTextAlign('center').run(), editor.isActive({ textAlign: 'center' }))}
                                 {tbBtn("→", () => editor.chain().focus().setTextAlign('right').run(), editor.isActive({ textAlign: 'right' }))}
                                 {tbBtn("≡", () => editor.chain().focus().setTextAlign('justify').run(), editor.isActive({ textAlign: 'justify' }))}
                             </div>
-                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid #ccc", flexShrink: 0 }}>
+                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid rgba(255,255,255,0.2)", flexShrink: 0 }}>
                                 {tbBtn("•—", () => editor.chain().focus().toggleBulletList().run(), editor.isActive("bulletList"))}
                                 {tbBtn("1.", () => editor.chain().focus().toggleOrderedList().run(), editor.isActive("orderedList"))}
                                 {tbBtn("❝", () => editor.chain().focus().toggleBlockquote().run(), editor.isActive("blockquote"))}
+                            </div>
+                            <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid rgba(255,255,255,0.2)", flexShrink: 0 }}>
+                                {tbBtn("<>", () => editor.chain().focus().toggleCode().run(), editor.isActive("code"))}
+                                {tbBtn("</>", () => editor.chain().focus().toggleCodeBlock().run(), editor.isActive("codeBlock"))}
                             </div>
                             <div className="flex gap-0.5 md:gap-1" style={{ flexShrink: 0 }}>
                                 {tbBtn("Link", setLink, editor.isActive("link"))}
                                 {tbBtn("Img", () => { const url = window.prompt('Image URL'); if (url) editor.chain().focus().setImage({ src: url }).run(); })}
                                 {tbBtn("YT", () => { const url = window.prompt("YouTube URL:"); if (url) editor.chain().focus().setYoutubeVideo({ src: url }).run(); })}
                             </div>
-                            <div className="hidden md:block text-xs text-gray-500 ml-auto">
+                            <div className="hidden md:block text-xs ml-auto" style={{ color: "rgba(255,255,255,0.5)" }}>
                                 {uploadingImage ? "Uploading..." : "Drag/Paste images supported"}
                             </div>
                         </>
@@ -368,6 +381,9 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                 .ProseMirror a { color: ${accent}; text-decoration: underline; cursor: pointer; }
                 .ProseMirror iframe { border-radius: 4px; border: 2px solid var(--border); }
                 .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 { color: var(--text); }
+                .ProseMirror code { font-family: monospace; background: var(--toolbar-bg); border: 1px solid var(--divider); padding: 1px 5px; border-radius: 3px; font-size: 0.875em; }
+                .ProseMirror pre { background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 0.875em; padding: 16px; border-radius: 4px; overflow-x: auto; margin: 16px 0; }
+                .ProseMirror pre code { background: none; border: none; padding: 0; font-size: inherit; color: inherit; }
             `}</style>
         </div>
     );

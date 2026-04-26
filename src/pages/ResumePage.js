@@ -20,7 +20,7 @@ const RESUME_SECTIONS = [
     {
         title: "Skills",
         items: [
-            { lines: ["Hardware: PCB design (KiCAD), Oscilloscopes, Soldering, Spectrometers", "Software: Python, JavaScript, Java, C++, Git, OceanView", "Sim: Ansys Mechanical, LAMMPS, OVITO, Moltemplate, Basilisk CFD"] },
+            { lines: ["Hardware: PCB design (KiCAD), Oscilloscopes, Soldering, Spectrometers", "Software: Python, JavaScript, Java, C++, Git, OceanView, Fusion 360, Sketchup", "Sim: Ansys Mechanical, LAMMPS, OVITO, Moltemplate, Basilisk CFD"] },
         ],
     },
 ];
