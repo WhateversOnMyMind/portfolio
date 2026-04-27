@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -9,6 +9,7 @@ import Youtube from "@tiptap/extension-youtube";
 import { supabase } from "../supabase";
 import { compressImage } from "../utils/compressImage";
 import { uploadToR2, deleteFromR2 } from "../utils/r2";
+import { VideoBlock } from "../utils/videoExtension";
 
 function parseFlairs(raw) {
     try { return JSON.parse(raw || "[]"); } catch { return []; }
@@ -23,6 +24,8 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
     const [saveMsg, setSaveMsg] = useState("");
     const [saving, setSaving] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [uploadingVideo, setUploadingVideo] = useState(false);
+    const videoInputRef = useRef(null);
 
     const [galleryImages, setGalleryImages] = useState([]);
     const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -46,6 +49,21 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
         } catch (e) {
             alert("Upload failed: " + e.message);
             setUploadingImage(false);
+            return null;
+        }
+    };
+
+    const handleVideoUpload = async (file) => {
+        setUploadingVideo(true);
+        try {
+            const ext = file.name.split(".").pop().toLowerCase() || "mp4";
+            const key = `videos/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+            const url = await uploadToR2(key, file, file.type || "video/mp4");
+            setUploadingVideo(false);
+            return url;
+        } catch (e) {
+            alert("Video upload failed: " + e.message);
+            setUploadingVideo(false);
             return null;
         }
     };
@@ -90,6 +108,7 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
             Link.configure({ openOnClick: false, autolink: true }),
             ImageResize,
             Youtube.configure({ inline: false, width: 640, height: 480, HTMLAttributes: { class: 'w-full rounded-md border-2 border-gray-800 my-4 aspect-video' } }),
+            VideoBlock,
         ],
         content: "<p>Start writing...</p>",
         editorProps: {
@@ -279,9 +298,10 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                                 {tbBtn("Link", setLink, editor.isActive("link"))}
                                 {tbBtn("Img", () => { const url = window.prompt('Image URL'); if (url) editor.chain().focus().setImage({ src: url }).run(); })}
                                 {tbBtn("YT", () => { const url = window.prompt("YouTube URL:"); if (url) editor.chain().focus().setYoutubeVideo({ src: url }).run(); })}
+                                {tbBtn("Vid", () => videoInputRef.current?.click())}
                             </div>
                             <div className="hidden md:block text-xs ml-auto" style={{ color: "rgba(255,255,255,0.5)" }}>
-                                {uploadingImage ? "Uploading..." : "Drag/Paste images supported"}
+                                {uploadingVideo ? "Uploading video..." : uploadingImage ? "Uploading..." : "Drag/Paste images supported"}
                             </div>
                         </>
                     )}
@@ -368,6 +388,16 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                     </div>
                 )}
             </div>
+
+            <input ref={videoInputRef} type="file" accept="video/*" className="hidden"
+                   onChange={async e => {
+                       const file = e.target.files?.[0];
+                       if (file) {
+                           const url = await handleVideoUpload(file);
+                           if (url) editor?.chain().focus().insertVideo(url).run();
+                       }
+                       e.target.value = "";
+                   }} />
 
             <style>{`
                 .ProseMirror { outline: none; color: var(--text); }

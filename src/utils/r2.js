@@ -12,12 +12,12 @@ const client = new S3Client({
 const BUCKET = process.env.REACT_APP_R2_BUCKET_NAME;
 export const R2_PUBLIC_URL = (process.env.REACT_APP_R2_PUBLIC_URL || "").replace(/\/$/, "");
 
-export async function uploadToR2(key, body) {
+export async function uploadToR2(key, body, contentType = "image/jpeg") {
     await client.send(new PutObjectCommand({
         Bucket: BUCKET,
         Key: key,
         Body: body,
-        ContentType: "image/jpeg",
+        ContentType: contentType,
     }));
     return `${R2_PUBLIC_URL}/${key}`;
 }
