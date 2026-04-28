@@ -4,7 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
-import ImageResize from "tiptap-extension-resize-image";
+import { FloatResizeImage } from "../utils/imageExtension";
 import Youtube from "@tiptap/extension-youtube";
 import { supabase } from "../supabase";
 import { compressImage } from "../utils/compressImage";
@@ -25,6 +25,7 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
     const [saving, setSaving] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [uploadingVideo, setUploadingVideo] = useState(false);
+    const [imageSelected, setImageSelected] = useState(false);
     const videoInputRef = useRef(null);
 
     const [galleryImages, setGalleryImages] = useState([]);
@@ -39,6 +40,7 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
     };
 
     const handleImageUpload = async (file) => {
+        if (!file) return null;
         setUploadingImage(true);
         try {
             const compressed = await compressImage(file);
@@ -106,11 +108,13 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
             Underline,
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             Link.configure({ openOnClick: false, autolink: true }),
-            ImageResize,
+            FloatResizeImage,
             Youtube.configure({ inline: false, width: 640, height: 480, HTMLAttributes: { class: 'w-full rounded-md border-2 border-gray-800 my-4 aspect-video' } }),
             VideoBlock,
         ],
         content: "<p>Start writing...</p>",
+        onSelectionUpdate: ({ editor }) => setImageSelected(editor.isActive("imageResize")),
+        onTransaction: ({ editor }) => setImageSelected(editor.isActive("imageResize")),
         editorProps: {
             attributes: { class: 'prose-content min-h-[500px] outline-none' },
             handlePaste: (view, event) => {
@@ -118,8 +122,10 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                 if (!items) return false;
                 for (const item of items) {
                     if (item.type.startsWith("image/")) {
+                        const file = item.getAsFile();
+                        if (!file) continue;
                         event.preventDefault();
-                        handleImageUpload(item.getAsFile()).then(url => { if (url) editor.chain().focus().setImage({ src: url }).run(); });
+                        handleImageUpload(file).then(url => { if (url) editor.chain().focus().setImage({ src: url }).run(); });
                         return true;
                     }
                 }
@@ -294,6 +300,13 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                                 {tbBtn("<>", () => editor.chain().focus().toggleCode().run(), editor.isActive("code"))}
                                 {tbBtn("</>", () => editor.chain().focus().toggleCodeBlock().run(), editor.isActive("codeBlock"))}
                             </div>
+                            {imageSelected && (
+                                <div className="flex gap-0.5 md:gap-1 pr-1.5 md:pr-2 mr-1.5 md:mr-2" style={{ borderRight: "1px solid rgba(255,255,255,0.2)", flexShrink: 0 }}>
+                                    {tbBtn("□", () => editor.chain().focus().setImageFloat("none").run(),  (editor.getAttributes("imageResize").float || "none") === "none")}
+                                    {tbBtn("◧", () => editor.chain().focus().setImageFloat("left").run(),  editor.getAttributes("imageResize").float === "left")}
+                                    {tbBtn("◨", () => editor.chain().focus().setImageFloat("right").run(), editor.getAttributes("imageResize").float === "right")}
+                                </div>
+                            )}
                             <div className="flex gap-0.5 md:gap-1" style={{ flexShrink: 0 }}>
                                 {tbBtn("Link", setLink, editor.isActive("link"))}
                                 {tbBtn("Img", () => { const url = window.prompt('Image URL'); if (url) editor.chain().focus().setImage({ src: url }).run(); })}
@@ -306,7 +319,7 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                         </>
                     )}
                 </div>
-                <div className="p-3 md:p-8 mx-auto my-2 md:my-4 shadow-sm" style={{ maxWidth: "850px", border: "1px solid var(--divider)", minHeight: "400px", background: "var(--surface)" }}>
+                <div className="p-3 md:p-8 mx-auto my-2 md:my-4 shadow-sm" style={{ maxWidth: "960px", border: "1px solid var(--divider)", minHeight: "400px", background: "var(--surface)", overflow: "hidden" }}>
                     <EditorContent editor={editor} />
                 </div>
             </div>
@@ -406,11 +419,14 @@ export default function AdminPanel({ accent, projects, setProjects, editingProje
                 .ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1em; }
                 .ProseMirror li { margin-bottom: 0.25em; }
                 .ProseMirror img { max-width: 100%; height: auto; display: block; }
-                .ProseMirror img.ProseMirror-selectednode { outline: 3px solid ${accent}; }
+
+                .ProseMirror::after { content: ''; display: table; clear: both; }
                 .ProseMirror blockquote { border-left: 4px solid var(--divider); padding-left: 1rem; color: var(--sub); }
                 .ProseMirror a { color: ${accent}; text-decoration: underline; cursor: pointer; }
                 .ProseMirror iframe { border-radius: 4px; border: 2px solid var(--border); }
-                .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 { color: var(--text); }
+                .ProseMirror h1 { color: var(--text); font-size: 2em; font-weight: bold; margin: 0.5em 0; }
+                .ProseMirror h2 { color: var(--text); font-size: 1.5em; font-weight: bold; margin: 0.5em 0; }
+                .ProseMirror h3 { color: var(--text); font-size: 1.2em; font-weight: bold; margin: 0.5em 0; }
                 .ProseMirror code { font-family: monospace; background: var(--toolbar-bg); border: 1px solid var(--divider); padding: 1px 5px; border-radius: 3px; font-size: 0.875em; }
                 .ProseMirror pre { background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 0.875em; padding: 16px; border-radius: 4px; overflow-x: auto; margin: 16px 0; }
                 .ProseMirror pre code { background: none; border: none; padding: 0; font-size: inherit; color: inherit; }

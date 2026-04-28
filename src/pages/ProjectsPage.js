@@ -54,7 +54,7 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
                       style={{ color: accent, borderBottom: `1px solid ${accent}`, letterSpacing: "1px" }}>
                     &larr; Back to Projects
                 </span>
-                <div className="max-w-3xl p-4 md:p-8" style={{ border: "2px solid var(--border)", background: "var(--surface)" }}>
+                <div className="max-w-4xl p-4 md:p-8" style={{ border: "2px solid var(--border)", background: "var(--surface)" }}>
                     <h1 className="special-elite text-3xl mb-2" style={{ color: "var(--text)" }}>{viewingProject.title}</h1>
                     <div className="flex items-center gap-3 pb-4 mb-6" style={{ borderBottom: "2px solid var(--border)" }}>
                         <span className="special-elite text-xs uppercase" style={{ color: "var(--muted)", letterSpacing: "1px" }}>{viewingProject.date}</span>
@@ -68,9 +68,12 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
                 </div>
                 <style>{`
                     .prose-content p { margin-bottom: 16px; }
+                    .prose-content h1 { font-family: 'Special Elite', monospace; font-size: 26px; margin: 32px 0 12px; color: var(--text); }
                     .prose-content h2 { font-family: 'Special Elite', monospace; font-size: 20px; margin: 28px 0 10px; border-bottom: 1px solid var(--divider); padding-bottom: 6px; color: var(--text); }
                     .prose-content h3 { font-family: 'Special Elite', monospace; font-size: 16px; margin: 20px 0 8px; color: var(--text); }
-                    .prose-content img { max-width: 100%; border: 2px solid ${accent}; margin: 16px 0; display: block; }
+                    .prose-content img { max-width: 100%; border: 2px solid ${accent}; display: inline-block; vertical-align: middle; }
+                    .prose-content img:not([data-float="left"]):not([data-float="right"]) { margin: 4px 8px 4px 0; }
+                    .prose-content::after { content: ''; display: table; clear: both; }
                     .prose-content iframe { width: 100%; aspect-ratio: 16/9; border: 2px solid ${accent}; margin: 16px 0; border-radius: 4px; display: block; }
                     .prose-content blockquote { border-left: 4px solid ${accent}; padding-left: 16px; color: var(--sub); font-style: italic; margin: 16px 0; }
                     .prose-content ul { list-style-type: disc; padding-left: 24px; margin-bottom: 16px; }

@@ -13,10 +13,13 @@ const BUCKET = process.env.REACT_APP_R2_BUCKET_NAME;
 export const R2_PUBLIC_URL = (process.env.REACT_APP_R2_PUBLIC_URL || "").replace(/\/$/, "");
 
 export async function uploadToR2(key, body, contentType = "image/jpeg") {
+    const resolvedBody = body instanceof Blob
+        ? new Uint8Array(await body.arrayBuffer())
+        : body;
     await client.send(new PutObjectCommand({
         Bucket: BUCKET,
         Key: key,
-        Body: body,
+        Body: resolvedBody,
         ContentType: contentType,
     }));
     return `${R2_PUBLIC_URL}/${key}`;
