@@ -38,6 +38,15 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
             }
 
             if (wrapper.querySelector(".expand-btn")) return;
+
+            const dlBtn = document.createElement("a");
+            dlBtn.href = video.src;
+            dlBtn.download = "";
+            dlBtn.textContent = "⤓ Download";
+            dlBtn.className = "expand-btn";
+            dlBtn.style.right = "130px";
+            wrapper.appendChild(dlBtn);
+
             const btn = document.createElement("button");
             btn.textContent = "⛶ Fullscreen";
             btn.className = "expand-btn";
@@ -74,9 +83,10 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
                 </div>
                 <style>{`
                     .prose-content p { margin-bottom: 16px; }
-                    .prose-content h1 { font-family: 'Special Elite', monospace; font-size: 26px; margin: 32px 0 12px; color: var(--text); }
-                    .prose-content h2 { font-family: 'Special Elite', monospace; font-size: 20px; margin: 28px 0 10px; border-bottom: 1px solid var(--divider); padding-bottom: 6px; color: var(--text); }
-                    .prose-content h3 { font-family: 'Special Elite', monospace; font-size: 16px; margin: 20px 0 8px; color: var(--text); }
+                    .prose-content p:empty::before { content: '\\00a0'; }
+                    .prose-content h1 { font-family: 'Special Elite', monospace; font-size: 26px; margin: 32px 0 12px; color: var(--text); clear: both; }
+                    .prose-content h2 { font-family: 'Special Elite', monospace; font-size: 20px; margin: 28px 0 10px; border-bottom: 1px solid var(--divider); padding-bottom: 6px; color: var(--text); clear: both; }
+                    .prose-content h3 { font-family: 'Special Elite', monospace; font-size: 16px; margin: 20px 0 8px; color: var(--text); clear: both; }
                     .prose-content img { max-width: 100%; border: 2px solid ${accent}; display: inline-block; vertical-align: middle; }
                     .prose-content img:not([data-float="left"]):not([data-float="right"]) { margin: 4px 8px 4px 0; }
                     .prose-content::after { content: ''; display: table; clear: both; }
@@ -87,14 +97,14 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
                     .prose-content li { margin-bottom: 4px; color: var(--text); }
                     .prose-content a { color: ${accent}; text-decoration: underline; }
                     .prose-content code { font-family: monospace; background: rgba(0,0,0,0.07); border: 1px solid var(--divider); padding: 1px 5px; border-radius: 3px; font-size: 0.875em; }
-                    .prose-content pre { position: relative; background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 0.875em; padding: 16px; border-radius: 4px; overflow-x: auto; margin: 16px 0; }
+                    .prose-content pre { position: relative; background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 0.875em; padding: 16px; border-radius: 4px; overflow-x: auto; margin: 16px 0; clear: both; }
                     .prose-content pre code { background: none; border: none; padding: 0; font-size: inherit; color: inherit; }
                     .copy-btn { position: absolute; top: 8px; right: 8px; font-family: monospace; font-size: 11px; padding: 3px 8px; background: rgba(255,255,255,0.12); color: #ccc; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer; transition: background 0.15s; }
                     .copy-btn:hover { background: rgba(255,255,255,0.22); color: #fff; }
-                    .prose-content [data-video-block] { position: relative; margin: 16px 0; background: #000; border-radius: 4px; overflow: hidden; border: 2px solid ${accent}; }
+                    .prose-content [data-video-block] { position: relative; margin: 16px 0; background: #000; border-radius: 4px; overflow: hidden; border: 2px solid ${accent}; clear: both; }
                     .prose-content [data-video-block] video { width: 100%; display: block; max-height: 480px; }
-                    .expand-btn { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; cursor: pointer; padding: 5px 12px; font-family: monospace; font-size: 12px; letter-spacing: 1px; transition: background 0.15s; }
-                    .expand-btn:hover { background: rgba(0,0,0,0.9); }
+                    .expand-btn { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; cursor: pointer; padding: 5px 12px; font-family: monospace; font-size: 12px; letter-spacing: 1px; transition: background 0.15s; text-decoration: none; display: inline-block; }
+                    .expand-btn:hover { background: rgba(0,0,0,0.9); color: #fff; }
                 `}</style>
             </div>
         );
