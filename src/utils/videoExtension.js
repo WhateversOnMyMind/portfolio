@@ -9,6 +9,7 @@ function VideoNodeView({ node }) {
                     src={node.attrs.src}
                     controls
                     playsInline
+                    preload="metadata"
                     style={{ width: "100%", display: "block", maxHeight: "480px" }}
                 />
             </div>
@@ -35,7 +36,7 @@ export const VideoBlock = Node.create({
         return [
             "div",
             mergeAttributes(rest, { "data-video-block": "" }),
-            ["video", { src, controls: "", playsinline: "" }],
+            ["video", { src, controls: "", playsinline: "", preload: "metadata" }],
         ];
     },
     addNodeView() {

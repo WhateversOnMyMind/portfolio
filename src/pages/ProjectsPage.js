@@ -29,9 +29,15 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
         });
 
         bodyRef.current.querySelectorAll("[data-video-block]").forEach(wrapper => {
-            if (wrapper.querySelector(".expand-btn")) return;
             const video = wrapper.querySelector("video");
             if (!video) return;
+
+            if (!video.getAttribute("preload")) {
+                video.setAttribute("preload", "metadata");
+                video.load();
+            }
+
+            if (wrapper.querySelector(".expand-btn")) return;
             const btn = document.createElement("button");
             btn.textContent = "⛶ Fullscreen";
             btn.className = "expand-btn";
@@ -86,7 +92,7 @@ export default function ProjectsPage({ accent, published, openProject, viewingPr
                     .copy-btn { position: absolute; top: 8px; right: 8px; font-family: monospace; font-size: 11px; padding: 3px 8px; background: rgba(255,255,255,0.12); color: #ccc; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer; transition: background 0.15s; }
                     .copy-btn:hover { background: rgba(255,255,255,0.22); color: #fff; }
                     .prose-content [data-video-block] { position: relative; margin: 16px 0; background: #000; border-radius: 4px; overflow: hidden; border: 2px solid ${accent}; }
-                    .prose-content [data-video-block] video { width: 100%; display: block; }
+                    .prose-content [data-video-block] video { width: 100%; display: block; max-height: 480px; }
                     .expand-btn { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; cursor: pointer; padding: 5px 12px; font-family: monospace; font-size: 12px; letter-spacing: 1px; transition: background 0.15s; }
                     .expand-btn:hover { background: rgba(0,0,0,0.9); }
                 `}</style>
